@@ -116,16 +116,18 @@ export default function App() {
       `🛠 Strategies: ${strategiesStr}`;
 
     try {
-      await fetch('/api/telegram', {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
-          chatId,
-          message: message,
-          parseMode: 'Markdown'
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'Markdown'
         })
       });
+      if (!response.ok) {
+        console.error('Telegram error:', await response.text());
+      }
     } catch (e) {
       console.error('Failed to send telegram', e);
     }
@@ -139,19 +141,22 @@ export default function App() {
       return;
     }
     try {
-      await fetch('/api/telegram', {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
-          chatId,
-          message: '📡 *ESTR V2.0 PRO: SYSTEM TEST*\nTesting connection to neural broadcast network... Success.',
-          parseMode: 'Markdown'
+          chat_id: chatId,
+          text: '📡 *ESTR V2.0 PRO: SYSTEM TEST*\nTesting connection to neural broadcast network... Success.',
+          parse_mode: 'Markdown'
         })
       });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
       alert('Test message sent!');
     } catch (e) {
       alert('Test failed. Check console or credentials.');
+      console.error(e);
     }
   };
 

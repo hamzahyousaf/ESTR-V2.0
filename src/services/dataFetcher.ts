@@ -5,7 +5,7 @@
 
 import { KLine } from '../types';
 
-const BINANCE_FUTURES_BASE = '/api/binance';
+const BINANCE_FUTURES_BASE = 'https://fapi.binance.com';
 
 export async function getTopSymbols(scanType: 'GAINERS' | 'VOLUME' = 'VOLUME', limit: number = 50): Promise<string[]> {
   try {
