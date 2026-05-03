@@ -177,13 +177,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ settings, setSettings, onScan,
 
               <div className={`flex items-center justify-between transition-opacity ${user.isAdmin ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}>
                 <label className="text-[10px] font-bold text-slate-300 uppercase">Auto Send (TG)</label>
-                <button 
-                  disabled={!user.isAdmin}
-                  onClick={() => setSettings({ ...settings, autoSendTelegram: !settings.autoSendTelegram })}
-                  className={`w-8 h-4 rounded-full p-0.5 transition-colors ${settings.autoSendTelegram ? 'bg-bento-green' : 'bg-bento-border'}`}
-                >
-                  <div className={`w-3 h-3 bg-white rounded-full transition-transform ${settings.autoSendTelegram ? 'translate-x-4' : 'translate-x-0'}`} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {user.isAdmin && (
+                    <button 
+                      onClick={onTestTelegram}
+                      className="p-1 hover:bg-white/10 rounded transition-colors text-bento-muted hover:text-bento-gold"
+                      title="Test Telegram Connection"
+                    >
+                      <BellRing className="w-3 h-3" />
+                    </button>
+                  )}
+                  <button 
+                    disabled={!user.isAdmin}
+                    onClick={() => setSettings({ ...settings, autoSendTelegram: !settings.autoSendTelegram })}
+                    className={`w-8 h-4 rounded-full p-0.5 transition-colors ${settings.autoSendTelegram ? 'bg-bento-green' : 'bg-bento-border'}`}
+                  >
+                    <div className={`w-3 h-3 bg-white rounded-full transition-transform ${settings.autoSendTelegram ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
               </div>
 
               {!user.isAdmin && (

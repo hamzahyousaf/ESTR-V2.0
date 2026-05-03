@@ -93,7 +93,15 @@ export default function App() {
     const token = privateConfig.telegramToken || settings.telegramToken;
     const chatId = privateConfig.telegramChatId || settings.telegramChatId;
 
-    if (!token || !chatId) return;
+    console.log('--- Telegram Send Triggered ---');
+    console.log('Is Auto:', isAuto);
+    console.log('Token Found:', !!token);
+    console.log('Chat ID Found:', !!chatId);
+
+    if (!token || !chatId) {
+      console.warn('Telegram send aborted: Token or ChatID missing');
+      return;
+    }
 
     const directionEmoji = result.direction === 'LONG' ? '🟢' : '🔴';
     const formattedSymbol = result.symbol.replace('USDT', '/USDT');
@@ -103,7 +111,7 @@ export default function App() {
     const strategiesStr = result.strategies.join(', ');
     const technicalDetail = `RSI: ${indicators?.rsi?.toFixed(1) || 'N/A'} | EMA20: ${indicators?.ema20?.toLocaleString() || 'N/A'} | EMA50: ${indicators?.ema50?.toLocaleString() || 'N/A'}`;
 
-    const message = `${directionEmoji}#${formattedSymbol}\n` +
+    const message = `${directionEmoji} # ${formattedSymbol}\n` +
       `💎 Signal Type: ${result.direction}\n` +
       `🌐 Score: ${result.score.toFixed(1)} (${result.grade})\n` +
       `🌐 Leverage: Cross (50.0X)\n` +
@@ -116,26 +124,36 @@ export default function App() {
       `🛠 Strategies: ${strategiesStr}`;
 
     try {
+      console.log('Sending message to Telegram API...');
       const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
           text: message,
-          parse_mode: 'Markdown'
+          parse_mode: 'HTML' // Switching to HTML for better reliability with special chars
         })
       });
+      
+      const data = await response.json();
       if (!response.ok) {
-        console.error('Telegram error:', await response.text());
+        console.error('Telegram API Error Response:', data);
+      } else {
+        console.log('Telegram Message Sent Successfully!', data);
       }
     } catch (e) {
-      console.error('Failed to send telegram', e);
+      console.error('Fatal fetch error during Telegram send:', e);
     }
   };
 
   const handleTestTelegram = async () => {
     const token = privateConfig.telegramToken || settings.telegramToken;
     const chatId = privateConfig.telegramChatId || settings.telegramChatId;
+    
+    console.log('--- Telegram Test Triggered ---');
+    console.log('Token Found:', !!token);
+    console.log('Chat ID Found:', !!chatId);
+
     if (!token || !chatId) {
       alert('Please configure Telegram settings in the Admin Area first.');
       return;
@@ -146,16 +164,20 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: '📡 *ESTR V2.0 PRO: SYSTEM TEST*\nTesting connection to neural broadcast network... Success.',
-          parse_mode: 'Markdown'
+          text: '📡 <b>ESTR V2.0 PRO: SYSTEM TEST</b>\nTesting connection to neural broadcast network... Success.',
+          parse_mode: 'HTML'
         })
       });
+      
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(await response.text());
+        console.error('Telegram Test Error:', data);
+        throw new Error(data.description || 'Unknown Telegram Error');
       }
+      console.log('Telegram Test Success:', data);
       alert('Test message sent!');
-    } catch (e) {
-      alert('Test failed. Check console or credentials.');
+    } catch (e: any) {
+      alert('Test failed: ' + e.message);
       console.error(e);
     }
   };
