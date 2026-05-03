@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'hamzahyousaf@gmail.com';
+    }
+
+    function isWhitelisted() {
+      return isAdmin() || exists(/databases/$(database)/documents/whitelisted_users/$(request.auth.token.email.lower()));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    // Whitelist management
+    match /whitelisted_users/{email} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Signals
+    match /signals/{signalId} {
+      allow read: if isWhitelisted();
+      allow create: if isWhitelisted();
+      allow update, delete: if isAdmin();
+    }
+
+    // Strategy Weights
+    match /strategy_weights/{strategy} {
+      allow read: if isWhitelisted();
+      allow write: if isAdmin();
+    }
+
+    // Config
+    match /config/public {
+      allow read: if isWhitelisted();
+      allow write: if isAdmin();
+    }
+
+    match /config/private {
+      allow read, write: if isAdmin();
+    }
+  }
+}
