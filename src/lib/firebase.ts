@@ -8,10 +8,10 @@ export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export const ADMIN_EMAIL = 'hamzahyousaf@gmail.com';
+export const ADMIN_EMAILS = ['hamzahyousaf@gmail.com', 'estrowner@gmail.com'];
 
 export async function checkWhitelist(email: string) {
-  if (email === ADMIN_EMAIL) return true;
+  if (ADMIN_EMAILS.includes(email.toLowerCase())) return true;
   const whitelistRef = doc(db, 'whitelisted_users', email.toLowerCase());
   const docSnap = await getDoc(whitelistRef);
   return docSnap.exists();

@@ -14,8 +14,8 @@ interface SidebarProps {
   onTestTelegram: () => void;
   isScanning: boolean;
   user: AppUser;
-  activeTab: 'SCANNER' | 'AI_HUB' | 'ADMIN';
-  setActiveTab: (tab: 'SCANNER' | 'AI_HUB' | 'ADMIN') => void;
+  activeTab: 'SCANNER' | 'AI_HUB' | 'TRADING' | 'ADMIN';
+  setActiveTab: (tab: 'SCANNER' | 'AI_HUB' | 'TRADING' | 'ADMIN') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ settings, setSettings, onScan, onTestTelegram, isScanning, user, activeTab, setActiveTab }) => {
@@ -35,6 +35,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ settings, setSettings, onScan,
           }`}
         >
           <LayoutGrid className="w-4 h-4" /> SCANNER MATRIX
+        </button>
+        <button
+          onClick={() => setActiveTab('TRADING')}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'TRADING' ? 'bg-bento-gold text-black shadow-lg shadow-bento-gold/10' : 'text-bento-muted hover:bg-white/5 hover:text-white'
+          }`}
+        >
+          <Zap className="w-4 h-4" /> TRADING HUB
         </button>
         <button
           onClick={() => setActiveTab('AI_HUB')}
@@ -174,6 +182,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ settings, setSettings, onScan,
                   />
                 </div>
               )}
+
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-slate-300 uppercase">Auto-Trade</label>
+                <button 
+                  onClick={() => setSettings({ ...settings, autoTrade: !settings.autoTrade })}
+                  className={`w-8 h-4 rounded-full p-0.5 transition-colors ${settings.autoTrade ? 'bg-bento-gold' : 'bg-bento-border'}`}
+                >
+                  <div className={`w-3 h-3 bg-white rounded-full transition-transform ${settings.autoTrade ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
+              </div>
 
               <div className={`flex items-center justify-between transition-opacity ${user.isAdmin ? 'opacity-100' : 'opacity-40 cursor-not-allowed'}`}>
                 <label className="text-[10px] font-bold text-slate-300 uppercase">Auto Send (TG)</label>

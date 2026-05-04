@@ -14,11 +14,13 @@ import { detectSMC } from './services/smc';
 import { calculateWeightedScore, getSignalGrade } from './services/scoring';
 import { Activity, Terminal, Zap, ShieldCheck, LogOut, User, Brain, BarChart3, History, Cpu, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
-import { auth, db, ADMIN_EMAIL, checkWhitelist } from './lib/firebase';
+import { auth, db, ADMIN_EMAILS, checkWhitelist } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, query, limit, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
 import { Login, AccessDenied } from './components/AuthScreens';
 import { generateCandleChart } from './services/chartGenerator';
+import { TradingHub } from './components/TradingHub';
+import { UserTradingConfig } from './types';
 
 const DEFAULT_SETTINGS: ScannerSettings = {
   mode: 'TECHNICAL',
@@ -47,7 +49,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [activeSignal, setActiveSignal] = useState<ScanResult | null>(null);
   const [stats, setStats] = useState({ coinsScanned: 0, signalsFound: 0 });
-  const [activeTab, setActiveTab] = useState<'SCANNER' | 'AI_HUB' | 'ADMIN'>('SCANNER');
+  const [activeTab, setActiveTab] = useState<'SCANNER' | 'AI_HUB' | 'TRADING' | 'ADMIN'>('SCANNER');
+  const [tradingConfig, setTradingConfig] = useState<UserTradingConfig | null>(null);
 
   // Auth Listener
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function App() {
           uid: fbUser.uid,
           email: fbUser.email,
           displayName: fbUser.displayName,
-          isAdmin: fbUser.email === ADMIN_EMAIL,
+          isAdmin: fbUser.email ? ADMIN_EMAILS.includes(fbUser.email.toLowerCase()) : false,
           isWhitelisted
         });
       } else {
@@ -83,9 +86,14 @@ export default function App() {
       });
     }
 
+    const unsubTrading = onSnapshot(doc(db, 'trading_configs', user.uid), (snap) => {
+      if (snap.exists()) setTradingConfig(snap.data() as UserTradingConfig);
+    });
+
     return () => {
       unsubPublic();
       unsubPrivate?.();
+      unsubTrading();
     };
   }, [user]);
 
@@ -203,6 +211,49 @@ export default function App() {
     }
   };
 
+  const handleAutoTrade = async (result: ScanResult) => {
+    if (!tradingConfig?.autoTradeEnabled || !tradingConfig.binanceApiKey) return;
+
+    console.log(`Executing Auto-Trade for ${result.symbol}...`);
+    try {
+      const payload = {
+        apiKey: tradingConfig.binanceApiKey,
+        apiSecret: tradingConfig.binanceApiSecret,
+        exchange: tradingConfig.exchange,
+        symbol: result.symbol,
+        side: result.direction === 'LONG' ? 'BUY' : 'SELL',
+        type: 'MARKET',
+        quantity: 0.1, // This should normally be calculated based on riskPerTrade and balance
+        sl: result.sl,
+        tp: result.tp,
+        isFutures: true
+      };
+
+      const endpoint = tradingConfig.exchange === 'BINANCE' ? '/api/trade/binance' : '/api/trade/bybit';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      console.log('Trade Execution Response:', data);
+      
+      if (data.msg || data.retMsg) {
+        // Log to Firestore if failed or succeeded
+        await addDoc(collection(db, 'trade_logs'), {
+          userId: user?.uid,
+          symbol: result.symbol,
+          timestamp: serverTimestamp(),
+          status: 'EXECUTED',
+          response: data
+        });
+      }
+    } catch (e) {
+      console.error('Auto-Trade Execution Failure:', e);
+    }
+  };
+
   const runScanner = useCallback(async () => {
     if (!user?.isWhitelisted) return;
     setIsScanning(true);
@@ -275,6 +326,10 @@ export default function App() {
 
             if (settings.autoScan && settings.autoSendTelegram && user?.isAdmin) {
               handleSendTelegram(signal, true);
+            }
+
+            if (settings.autoTrade && tradingConfig?.autoTradeEnabled) {
+              handleAutoTrade(signal);
             }
 
             addDoc(collection(db, 'signals'), {
@@ -431,7 +486,8 @@ export default function App() {
         </>
       )}
 
-      {activeTab === 'AI_HUB' && <AIHub adminMode={user.isAdmin} />}
+      {activeTab === 'AI_HUB' && <AIHub signals={results} adminMode={user.isAdmin} />}
+      {activeTab === 'TRADING' && <TradingHub user={user} />}
       {activeTab === 'ADMIN' && user.isAdmin && <AdminArea />}
 
       <footer className="bg-bento-card border border-bento-border rounded-xl px-5 footer-status">
@@ -531,8 +587,8 @@ function SignalDetails({ result, isAdmin, onSendTelegram }: { result: ScanResult
   );
 }
 
-function AIHub({ adminMode }: { adminMode: boolean }) {
-  const [signals, setSignals] = useState<ScanResult[]>([]);
+function AIHub({ signals: initialSignals, adminMode }: { signals: ScanResult[], adminMode: boolean }) {
+  const [signals, setSignals] = useState<ScanResult[]>(initialSignals);
   const [weights, setWeights] = useState<any[]>([]);
   const [activeSignalForLearning, setActiveSignalForLearning] = useState<any | null>(null);
   const [learningForm, setLearningForm] = useState({ outcome: 'TP HIT', profit: 0, notes: '' });
@@ -956,7 +1012,7 @@ function AdminArea() {
           {whitelist.map(u => (
             <div key={u.id} className="p-2.5 bg-bento-border/20 rounded flex justify-between items-center group">
               <span className="text-xs text-slate-300 font-medium">{u.email}</span>
-              <button disabled={u.email === ADMIN_EMAIL} onClick={() => handleRemoveWhitelist(u.id)} className="text-bento-muted hover:text-bento-red opacity-0 group-hover:opacity-100 transition-all">
+              <button disabled={ADMIN_EMAILS.includes((u.email || '').toLowerCase())} onClick={() => handleRemoveWhitelist(u.id)} className="text-bento-muted hover:text-bento-red opacity-0 group-hover:opacity-100 transition-all">
                 <ShieldAlert className="w-4 h-4" />
               </button>
             </div>

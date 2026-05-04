@@ -49,6 +49,17 @@ export interface ScanResult {
   activeIndicators?: Record<string, any>;
 }
 
+export interface UserTradingConfig {
+  binanceApiKey: string;
+  binanceApiSecret: string;
+  bybitApiKey: string;
+  bybitApiSecret: string;
+  autoTradeEnabled: boolean;
+  leverage: number;
+  riskPerTrade: number; // Percent of balance
+  exchange: 'BINANCE' | 'BYBIT';
+}
+
 export interface ScannerSettings {
   mode: Mode;
   scanType: ScanType;
@@ -64,6 +75,7 @@ export interface ScannerSettings {
   autoSendTelegram: boolean;
   autoScan: boolean;
   timeframe: string;
+  autoTrade?: boolean;
 }
 
 export interface AppUser {
