@@ -77,18 +77,18 @@ export default function App() {
 
     const unsubPublic = onSnapshot(doc(db, 'config', 'public'), (snap) => {
       if (snap.exists()) setSettings(prev => ({ ...prev, ...snap.data() }));
-    });
+    }, (error) => console.error("config/public snapshot error:", error));
 
     let unsubPrivate: (() => void) | undefined;
     if (user.isAdmin) {
       unsubPrivate = onSnapshot(doc(db, 'config', 'private'), (snap) => {
         if (snap.exists()) setPrivateConfig(snap.data() as any);
-      });
+      }, (error) => console.error("config/private snapshot error:", error));
     }
 
     const unsubTrading = onSnapshot(doc(db, 'trading_configs', user.uid), (snap) => {
       if (snap.exists()) setTradingConfig(snap.data() as UserTradingConfig);
-    });
+    }, (error) => console.error("trading_configs snapshot error:", error));
 
     return () => {
       unsubPublic();
@@ -597,13 +597,13 @@ function AIHub({ signals: initialSignals, adminMode }: { signals: ScanResult[], 
     const q = query(collection(db, 'signals'), orderBy('createdAt', 'desc'), limit(20));
     return onSnapshot(q, (snap) => {
       setSignals(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    });
+    }, (error) => console.error("signals snapshot error:", error));
   }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, 'strategy_weights'), (snap) => {
       setWeights(snap.docs.map(doc => ({ name: doc.id, ...doc.data() } as any)));
-    });
+    }, (error) => console.error("strategy_weights snapshot error:", error));
   }, []);
 
   const handleSubmitLearning = async () => {
@@ -959,13 +959,13 @@ function AdminArea() {
   useEffect(() => {
     return onSnapshot(collection(db, 'whitelisted_users'), (snap) => {
       setWhitelist(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (error) => console.error("whitelisted_users snapshot error:", error));
   }, []);
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'private'), (snap) => {
       if (snap.exists()) setPrivateConfig(snap.data() as any);
-    });
+    }, (error) => console.error("config/private admin snapshot error:", error));
   }, []);
 
   const handleAddWhitelist = async () => {

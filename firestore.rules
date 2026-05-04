@@ -11,7 +11,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'hamzahyousaf@gmail.com';
+      return isSignedIn() && (request.auth.token.email.lower() == 'hamzahyousaf@gmail.com' || request.auth.token.email.lower() == 'estrowner@gmail.com');
     }
 
     function isWhitelisted() {
@@ -28,6 +28,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Trading configs
+    match /trading_configs/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Trade logs
+    match /trade_logs/{logId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
     // Signals
     match /signals/{signalId} {
       allow read: if isWhitelisted();
@@ -35,7 +46,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Strategy Weights
+    // Strategy Weights and NN weights
+    match /weights/{docId} {
+      allow read: if isWhitelisted();
+      allow write: if isAdmin();
+    }
+    
     match /strategy_weights/{strategy} {
       allow read: if isWhitelisted();
       allow write: if isAdmin();

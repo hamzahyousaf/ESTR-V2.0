@@ -32,6 +32,9 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
         setConfig(prev => ({ ...prev, ...snap.data() }));
       }
       setLoading(false);
+    }, (error) => {
+      console.error("trading_configs snapshot error:", error);
+      setLoading(false);
     });
 
     return () => unsub();
