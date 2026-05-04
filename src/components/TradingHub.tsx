@@ -86,13 +86,14 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-bento-muted uppercase">Global Auto-Trade</label>
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-bold text-bento-muted uppercase">Global Auto-Trade</label>
                 <button 
+                  type="button"
                   onClick={() => setConfig({ ...config, autoTradeEnabled: !config.autoTradeEnabled })}
-                  className={`w-14 h-7 rounded-full p-1 transition-colors ${config.autoTradeEnabled ? 'bg-bento-green' : 'bg-slate-800'}`}
+                  className={`w-14 h-8 rounded-full p-1 transition-colors flex items-center ${config.autoTradeEnabled ? 'bg-bento-green' : 'bg-slate-700'}`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${config.autoTradeEnabled ? 'translate-x-7' : 'translate-x-0'}`} />
+                  <div className={`w-6 h-6 bg-white rounded-full transition-transform transform ${config.autoTradeEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
               </div>
             </div>
@@ -162,7 +163,7 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-6 pt-2 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 relative z-10 w-full">
             <div className="space-y-1.5 focus-within:scale-[1.02] transition-transform">
               <label className="text-[9px] font-bold text-bento-muted uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-3 h-3" /> Exchange
@@ -199,18 +200,20 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
                 className="w-full bg-black/50 border border-white/5 rounded-xl py-3 px-4 text-sm font-black text-bento-blue focus:border-bento-blue outline-none transition-all"
               />
             </div>
-            <div className="flex items-end pb-1">
-                <button 
-                  onClick={handleSave}
-                  disabled={saveLoading}
-                  className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 ${
-                    saveLoading ? 'bg-slate-700 text-slate-400' : 'bg-white text-black hover:bg-slate-200 active:scale-95'
-                  }`}
-                >
-                  {saveLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-                  Save Setup
-                </button>
-            </div>
+          </div>
+          
+          <div className="relative z-10 w-full mt-2">
+            <button 
+              type="button"
+              onClick={handleSave}
+              disabled={saveLoading}
+              className={`w-full py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 ${
+                saveLoading ? 'bg-slate-700 text-slate-400' : 'bg-white text-black hover:bg-slate-200 active:scale-95'
+              }`}
+            >
+              {saveLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              Save API Setup
+            </button>
           </div>
 
           {message && (
