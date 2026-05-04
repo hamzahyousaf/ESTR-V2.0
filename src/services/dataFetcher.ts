@@ -5,15 +5,35 @@
 
 import { KLine } from '../types';
 
-const BINANCE_FUTURES_BASE = 'https://fapi.binance.com';
+const BINANCE_ENDPOINTS = [
+  'https://fapi.binance.com',
+  'https://fapi1.binance.com',
+  'https://fapi2.binance.com',
+  'https://fapi3.binance.com'
+];
+
+async function fetchWithRetry(path: string, options: RequestInit = {}): Promise<Response> {
+  let lastError: any;
+  for (const endpoint of BINANCE_ENDPOINTS) {
+    try {
+      const response = await fetch(`${endpoint}${path}`, { 
+        ...options, 
+        mode: 'cors',
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer'
+      });
+      if (response.ok || response.status < 500) return response;
+    } catch (e) {
+      lastError = e;
+      console.warn(`Endpoint ${endpoint} failed, trying next...`, e);
+    }
+  }
+  throw lastError || new Error('All Binance endpoints failed');
+}
 
 export async function getTopSymbols(scanType: 'GAINERS' | 'VOLUME' = 'VOLUME', limit: number = 50): Promise<string[]> {
   try {
-    const response = await fetch(`${BINANCE_FUTURES_BASE}/fapi/v1/ticker/24hr`);
-    if (!response.ok) {
-      console.error('Binance API error:', response.statusText);
-      return [];
-    }
+    const response = await fetchWithRetry('/fapi/v1/ticker/24hr');
     const data = await response.json();
     
     if (!Array.isArray(data)) {
@@ -36,17 +56,20 @@ export async function getTopSymbols(scanType: 'GAINERS' | 'VOLUME' = 'VOLUME', l
     }
   } catch (error) {
     console.error('Error fetching symbols:', error);
-    return [];
+    throw error; // Re-throw to catch in App.tsx
   }
 }
 
 export async function getKlines(symbol: string, interval: string, limit: number = 100): Promise<KLine[]> {
   try {
-    const response = await fetch(
-      `${BINANCE_FUTURES_BASE}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+    const response = await fetchWithRetry(
+      `/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
     );
+    
     const data = await response.json();
     
+    if (!Array.isArray(data)) return [];
+
     return data.map((item: any) => ({
       time: item[0],
       open: parseFloat(item[1]),
@@ -56,18 +79,18 @@ export async function getKlines(symbol: string, interval: string, limit: number 
       volume: parseFloat(item[5]),
     }));
   } catch (error) {
-    console.error(`Error fetching klines for ${symbol}:`, error);
+    console.error(`Network error fetching klines for ${symbol}:`, error);
     return [];
   }
 }
 
 export async function getCurrentPrice(symbol: string): Promise<number> {
   try {
-    const response = await fetch(`${BINANCE_FUTURES_BASE}/fapi/v1/ticker/price?symbol=${symbol}`);
+    const response = await fetchWithRetry(`/fapi/v1/ticker/price?symbol=${symbol}`);
     const data = await response.json();
     return parseFloat(data.price);
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
+    console.error(`Network error fetching price for ${symbol}:`, error);
     return 0;
   }
 }
