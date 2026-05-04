@@ -85,14 +85,16 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label className="text-[10px] font-bold text-bento-muted uppercase">Global Auto-Trade</label>
-              <button 
-                onClick={() => setConfig({ ...config, autoTradeEnabled: !config.autoTradeEnabled })}
-                className={`w-10 h-5 rounded-full p-0.5 transition-colors ${config.autoTradeEnabled ? 'bg-bento-green' : 'bg-slate-800'}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${config.autoTradeEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-bento-muted uppercase">Global Auto-Trade</label>
+                <button 
+                  onClick={() => setConfig({ ...config, autoTradeEnabled: !config.autoTradeEnabled })}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors ${config.autoTradeEnabled ? 'bg-bento-green' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${config.autoTradeEnabled ? 'translate-x-7' : 'translate-x-0'}`} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -160,7 +162,20 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 pt-2 relative z-10">
+          <div className="grid grid-cols-4 gap-6 pt-2 relative z-10">
+            <div className="space-y-1.5 focus-within:scale-[1.02] transition-transform">
+              <label className="text-[9px] font-bold text-bento-muted uppercase tracking-widest flex items-center gap-2">
+                <Activity className="w-3 h-3" /> Exchange
+              </label>
+              <select 
+                value={config.exchange}
+                onChange={(e) => setConfig({ ...config, exchange: e.target.value as 'BINANCE' | 'BYBIT' })}
+                className="w-full bg-black/50 border border-white/5 rounded-xl py-3 px-4 text-sm font-black text-white focus:border-bento-gold outline-none transition-all appearance-none"
+              >
+                <option value="BINANCE">Binance</option>
+                <option value="BYBIT">Bybit</option>
+              </select>
+            </div>
             <div className="space-y-1.5 focus-within:scale-[1.02] transition-transform">
               <label className="text-[9px] font-bold text-bento-muted uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-3 h-3" /> Leverage (X)
@@ -174,7 +189,7 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
             </div>
             <div className="space-y-1.5 focus-within:scale-[1.02] transition-transform">
               <label className="text-[9px] font-bold text-bento-muted uppercase tracking-widest flex items-center gap-2">
-                <ShieldCheck className="w-3 h-3" /> Risk Per Trade (%)
+                <ShieldCheck className="w-3 h-3" /> Risk / Trade (%)
               </label>
               <input 
                 type="number" 
@@ -193,7 +208,7 @@ export const TradingHub: React.FC<TradingHubProps> = ({ user }) => {
                   }`}
                 >
                   {saveLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-                  Finalize Handshake
+                  Save Setup
                 </button>
             </div>
           </div>
